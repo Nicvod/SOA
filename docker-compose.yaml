@@ -1,0 +1,55 @@
+services:
+  user_db:
+    image: postgres:13
+    container_name: postgres_db
+    env_file: .user.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./userService/db/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+
+  user_app:
+    build:
+      context: ./userService
+      dockerfile: ./Dockerfile
+    container_name: go_app
+    depends_on:
+      - user_db
+    env_file: .user.env
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./userService/.keys:/app/.keys
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ./Dockerfile
+    container_name: react_frontend
+    ports:
+      - "80"
+
+  api_gateway:
+    build:
+      context: .
+      dockerfile: ./apigateway/Dockerfile
+    ports:
+      - "80"
+    depends_on:
+      - user_app
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: ./Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - frontend
+      - api_gateway
+
+volumes:
+  postgres_data:
