@@ -1,0 +1,62 @@
+@startuml
+
+entity "Posts" {
+    * id: number
+    --
+    creator_id: number
+    content: varchar
+    media_url: varchar
+    is_hidden: boolean
+    created_at: timestamp
+    updated_at: timestamp
+    deleted_at: timestamp
+}
+
+entity "Comments" {
+    * id: number
+    --
+    post_id: number
+    user_id: number
+    parent_id: number
+    created_at: timestamp
+    updated_at: timestamp
+    deleted_at: timestamp
+}
+
+entity "Views" {
+    * id: number
+    --
+    post_id: number
+    user_id: number
+    viewed_at: timestamp
+    soul_sale: boolean
+}
+
+entity "Reactions" {
+    * id: number
+    --
+    name: varchar
+    description: varchar
+    creator_id: number
+    image_ref: varchar
+    created_at: timestamp
+    updated_at: timestamp
+    deleted_at: timestamp
+}
+
+entity "PostReactions" {
+    post_id: number
+    user_id: number
+    reaction_id: number
+    reacted_at: number
+    deleted_at: number
+}
+
+
+
+Posts ||--o{ Comments
+Posts ||--o{ Views
+Posts ||--o{ PostReactions
+Reactions ||--o{ PostReactions
+
+@enduml

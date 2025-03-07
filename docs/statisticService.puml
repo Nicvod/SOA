@@ -1,0 +1,28 @@
+@startuml
+
+
+entity "CommentStatistic" {
+    user_id: number
+    post_id: number
+    comment_id: number
+    city_of_comment: varchar
+    soul_sale: boolean
+}
+
+entity "ReactionStatistic" {
+    user_id: number
+    post_id: number
+    reaction_id: number
+    city_of_reaction: varchar
+    soul_sale: boolean
+}
+
+entity "ViewStatistic" {
+    user_id: number
+    post_id: number
+    viewed_at: timestamp
+    city_of_view: varchar
+    soul_sale: boolean
+}
+
+@enduml

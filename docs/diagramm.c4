@@ -1,0 +1,80 @@
+specification {
+    element person {
+        style {
+            shape person
+            color green
+        }
+    }
+    element softwareSystem
+    element container
+}
+
+model {
+  user = person "Пользователь" "Пользователь социальной сети"
+
+  socialNetwork = softwareSystem "Социальная сеть" {
+    apiGateway = container "API Gateway" {
+      description "Маршрутизация запросов и управление доступом"
+    }
+
+    userService = container "User Service" {
+      description "Управление пользователями и аутентификация"
+    }
+
+    postService = container "Post Service" {
+      description "Управление постами и комментариями"
+    }
+
+    statisticsService = container "Statistics Service" {
+      description "Сбор и анализ статистики по постам"
+    }
+
+    postgresUserDb = container "PostgreSQL" {
+      description "Хранение данных пользователей"
+      style {
+        shape cylinder
+      }
+    }
+
+    postgresPostDb = container "PostgreSQL" {
+      description "Хранение постов и комментариев"
+      style {
+        shape cylinder
+      }
+    }
+
+    clickhouseDb = container "ClickHouse" {
+      description "Хранение аналитических данных"
+      style {
+        shape cylinder
+      }
+    }
+
+    broker = container "kafka/RabbitMQ/..." {
+      description "Обмен событиями между сервисами"
+      style {
+        shape queue
+      }
+    }
+  }
+
+  user -> socialNetwork.apiGateway "Запросы"
+  socialNetwork.apiGateway -> socialNetwork.userService "Маршрутизирует"
+  socialNetwork.apiGateway -> socialNetwork.postService "Маршрутизирует"
+  socialNetwork.apiGateway -> socialNetwork.statisticsService "Маршрутизирует"
+
+  socialNetwork.userService -> socialNetwork.postgresUserDb "Читает/Пишет"
+  socialNetwork.postService -> socialNetwork.postgresPostDb "Читает/Пишет"
+  socialNetwork.statisticsService -> socialNetwork.clickhouseDb "Читает/Пишет"
+
+  socialNetwork.userService -> socialNetwork.broker "Публикует" "user_events"
+  socialNetwork.postService -> socialNetwork.broker "Публикует" "post_events"
+  socialNetwork.statisticsService -> socialNetwork.broker "Подписывается" "user_events, post_events"
+
+}
+
+views {
+   view index {
+        include *
+    }
+}
