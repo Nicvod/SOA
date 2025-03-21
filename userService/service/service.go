@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"time"
 
 	pb "local.domain/user_proto"
@@ -143,6 +144,7 @@ func (s *UserService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "failed to get info from token: %v", err)
 	}
+	log.Println(tokenInfo)
 	if tokenInfo.TokenType != RefreshToken {
 		return nil, status.Error(codes.InvalidArgument, "bad token type")
 	}

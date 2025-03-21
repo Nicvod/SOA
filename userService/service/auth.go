@@ -33,7 +33,7 @@ type TokenInfo struct {
 
 type TokenClaims struct {
 	UserID    int       `json:"user_id"`
-	TokenType TokenType `json:"-"`
+	TokenType TokenType `json:"token_type"`
 	jwtLib.RegisteredClaims
 }
 
