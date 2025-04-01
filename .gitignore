@@ -1,0 +1,4 @@
+.keys
+.history
+*.env
+node_modules

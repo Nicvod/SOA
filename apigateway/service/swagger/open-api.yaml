@@ -1,0 +1,232 @@
+openapi: 3.0.0
+info:
+  title: User Service API
+  description: API для регистрации, аутентификации и управления профилями пользователей
+  version: 1.0.0
+
+servers:
+  - url: http://localhost
+    description: Локальный сервер
+
+paths:
+  /api/v1/register:
+    post:
+      summary: Регистрация нового пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterUserResponse'
+        '400':
+          description: Неверные данные запроса
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /api/v1/authenticate:
+    post:
+      summary: Аутентификация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticateUserRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticateUserResponse'
+        '401':
+          description: Неверные логин или пароль
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /api/v1/refresh-token:
+    post:
+      summary: Обновление access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '401':
+          description: Неверный или истекший refresh token
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /api/v1/profile:
+    put:
+      summary: Обновление профиля пользователя
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Профиль успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateProfileResponse'
+        '400':
+          description: Неверные данные запроса
+        '401':
+          description: Неверный или отсутствующий токен
+        '500':
+          description: Внутренняя ошибка сервера
+
+    get:
+      summary: Получение данных профиля пользователя
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetProfileResponse'
+        '401':
+          description: Неверный или отсутствующий токен
+        '500':
+          description: Внутренняя ошибка сервера
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterUserRequest:
+      type: object
+      required:
+        - login
+        - password
+        - email
+        - first_name
+        - last_name
+        - birth_date
+        - phone_number
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        birth_date:
+          type: string
+          format: date-time
+        phone_number:
+          type: string
+
+    RegisterUserResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+
+    AuthenticateUserRequest:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+
+    AuthenticateUserResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        birth_date:
+          type: string
+          format: date-time
+        phone_number:
+          type: string
+
+    UpdateProfileResponse:
+      type: object
+
+    GetProfileResponse:
+      type: object
+      properties:
+        login:
+          type: string
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        birth_date:
+          type: string
+          format: date-time
+        phone_number:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
