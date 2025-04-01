@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"flag"
@@ -12,10 +12,9 @@ import (
 )
 
 type Config struct {
-	DBConn         DBConnConfig
-	ServicePort    string
-	PrivateKeyFile string
-	PublicKeyFile  string
+	DBConn        DBConnConfig
+	ServicePort   string
+	PublicKeyFile string
 }
 
 type DBConnConfig struct {
@@ -39,6 +38,7 @@ func NewDB(cfg *Config) (*sqlx.DB, error) {
 	retryInterval := 15 * time.Second
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		log.Println(connStr)
 		db, err = sqlx.Connect("postgres", connStr)
 		if err == nil {
 			log.Println("Successfully connected to the database!")
@@ -55,8 +55,7 @@ func NewDB(cfg *Config) (*sqlx.DB, error) {
 }
 
 func NewConfig() (*Config, error) {
-	var privateFile, publicFile, dbNameEnv, dbUserEnv, dbPasswordEnv, dbName, dbUser, dbPassword string
-	flag.StringVar(&privateFile, "private_key", "", "path to JWT private key `file`")
+	var publicFile, dbNameEnv, dbUserEnv, dbPasswordEnv, dbName, dbUser, dbPassword string
 	flag.StringVar(&publicFile, "public_key", "", "path to JWT public key `file`")
 	flag.StringVar(&dbNameEnv, "db_name_env", "", "database name env")
 	flag.StringVar(&dbUserEnv, "db_user_env", "", "database user env")
@@ -64,9 +63,6 @@ func NewConfig() (*Config, error) {
 	dbPort := flag.Int("db_port", 5432, "database port")
 	servicePort := flag.Int("service_port", 50051, "service port")
 	flag.Parse()
-	if privateFile == "" {
-		return nil, fmt.Errorf("no private key file provided")
-	}
 	if publicFile == "" {
 		return nil, fmt.Errorf("no private key file provided")
 	}
@@ -87,14 +83,13 @@ func NewConfig() (*Config, error) {
 	}
 	return &Config{
 		DBConn: DBConnConfig{
-			DBHost:     "user_db",
+			DBHost:     "post_db",
 			DBPort:     fmt.Sprint(*dbPort),
 			DBUser:     dbUser,
 			DBPassword: dbPassword,
 			DBName:     dbName,
 		},
-		ServicePort:    fmt.Sprint(*servicePort),
-		PrivateKeyFile: privateFile,
-		PublicKeyFile:  publicFile,
+		ServicePort:   fmt.Sprint(*servicePort),
+		PublicKeyFile: publicFile,
 	}, nil
 }

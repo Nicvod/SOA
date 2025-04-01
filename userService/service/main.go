@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	pb "local.domain/user_proto"
+	pb "github.com/Nicvod/SOA/userService/user_proto"
 
 	"google.golang.org/grpc"
 )
