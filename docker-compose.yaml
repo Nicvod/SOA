@@ -1,7 +1,7 @@
 services:
   user_db:
     image: postgres:13
-    container_name: postgres_db
+    container_name: user_db
     env_file: .user.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -11,14 +11,37 @@ services:
 
   user_app:
     build:
-      context: ./userService
-      dockerfile: ./Dockerfile
-    container_name: go_app
+      context: .
+      dockerfile: ./userService/Dockerfile
+    container_name: user_app
     depends_on:
       - user_db
     env_file: .user.env
     ports:
       - "50051:50051"
+    volumes:
+      - ./userService/.keys:/app/.keys
+
+  post_db:
+    image: postgres:13
+    container_name: post_db
+    env_file: .post.env
+    volumes:
+      - post_postgres_data:/var/lib/postgresql/data
+      - ./postService/db/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"
+
+  post_app:
+    build:
+      context: .
+      dockerfile: ./postService/Dockerfile
+    container_name: post_app
+    depends_on:
+      - post_db
+    env_file: .post.env
+    ports:
+      - "50052:50051"
     volumes:
       - ./userService/.keys:/app/.keys
 
@@ -34,6 +57,7 @@ services:
     build:
       context: .
       dockerfile: ./apigateway/Dockerfile
+    container_name: api_gateway
     ports:
       - "80"
     depends_on:
@@ -53,3 +77,4 @@ services:
 
 volumes:
   postgres_data:
+  post_postgres_data:

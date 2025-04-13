@@ -108,6 +108,144 @@ paths:
           description: Неверный или отсутствующий токен
         '500':
           description: Внутренняя ошибка сервера
+  /api/v1/posts:
+    post:
+      summary: Создание нового поста
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: Пост успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+        '400':
+          description: Неверные данные запроса
+        '401':
+          description: Неавторизованный доступ
+        '500':
+          description: Внутренняя ошибка сервера
+    get:
+      summary: Получение списка постов с пагинацией
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Номер страницы
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            default: 10
+          description: Количество постов на странице
+      responses:
+        '200':
+          description: Список постов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPostsResponse'
+        '401':
+          description: Неавторизованный доступ
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /api/v1/posts/{post_id}:
+    get:
+      summary: Получение поста по ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: post_id
+          required: true
+          schema:
+            type: string
+          description: ID поста
+      responses:
+        '200':
+          description: Данные поста
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+        '401':
+          description: Неавторизованный доступ
+        '403':
+          description: Доступ запрещен (попытка просмотра приватного поста другого пользователя)
+        '404':
+          description: Пост не найден
+        '500':
+          description: Внутренняя ошибка сервера
+    
+    put:
+      summary: Обновление поста
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: post_id
+          required: true
+          schema:
+            type: string
+          description: ID поста
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePostRequest'
+      responses:
+        '200':
+          description: Пост успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+        '400':
+          description: Неверные данные запроса
+        '401':
+          description: Неавторизованный доступ
+        '403':
+          description: Доступ запрещен (попытка изменения чужого поста)
+        '404':
+          description: Пост не найден
+        '500':
+          description: Внутренняя ошибка сервера
+    
+    delete:
+      summary: Удаление поста
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: post_id
+          required: true
+          schema:
+            type: string
+          description: ID поста
+      responses:
+        '204':
+          description: Пост успешно удален
+        '401':
+          description: Неавторизованный доступ
+        '403':
+          description: Доступ запрещен (попытка удаления чужого поста)
+        '404':
+          description: Пост не найден
+        '500':
+          description: Внутренняя ошибка сервера
 
 components:
   securitySchemes:
@@ -230,3 +368,80 @@ components:
         updated_at:
           type: string
           format: date-time
+    CreatePostRequest:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+        is_private:
+          type: boolean
+          default: false
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 20
+          maxItems: 10
+
+    UpdatePostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+        is_private:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 20
+          maxItems: 10
+
+    PostResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        creator_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        is_private:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+
+    ListPostsResponse:
+      type: object
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostResponse'
+        total_count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer

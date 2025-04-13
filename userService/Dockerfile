@@ -2,13 +2,12 @@ FROM golang:1.23
 
 WORKDIR /app
 
-COPY service /app/service
-COPY .keys /app/.keys
-COPY user_proto /app/user_proto
+COPY . /app
+COPY ./userService/.keys /app/.keys
 
-WORKDIR /app/service
+WORKDIR /app
 
-RUN go build -o main
+RUN go build -o main ./userService/service/...
 
 EXPOSE 50051
 

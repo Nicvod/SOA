@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	user_proto "local.domain/user_proto"
+	user_proto "github.com/Nicvod/SOA/userService/user_proto"
 )
 
 type CustomTimestamp struct {
@@ -81,7 +81,7 @@ func registerUser(c *gin.Context) {
 		PhoneNumber: req.PhoneNumber,
 	}
 
-	res, err := grpcClient.RegisterUser(context.Background(), grpcReq)
+	res, err := userClient.RegisterUser(context.Background(), grpcReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -116,7 +116,7 @@ func updateProfile(c *gin.Context) {
 		PhoneNumber: req.PhoneNumber,
 	}
 
-	res, err := grpcClient.UpdateProfile(ctx, grpcReq)
+	res, err := userClient.UpdateProfile(ctx, grpcReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -137,7 +137,7 @@ func getProfile(c *gin.Context) {
 		metadata.Pairs("authorization", "Bearer "+token),
 	)
 
-	res, err := grpcClient.GetProfile(ctx, &user_proto.GetProfileRequest{})
+	res, err := userClient.GetProfile(ctx, &user_proto.GetProfileRequest{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -164,7 +164,7 @@ func authenticateUser(c *gin.Context) {
 		return
 	}
 
-	res, err := grpcClient.AuthenticateUser(context.Background(), &req)
+	res, err := userClient.AuthenticateUser(context.Background(), &req)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid login or password"})
 		return
@@ -180,25 +180,11 @@ func refreshToken(c *gin.Context) {
 		return
 	}
 
-	res, err := grpcClient.RefreshToken(context.Background(), &req)
+	res, err := userClient.RefreshToken(context.Background(), &req)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired refresh token"})
 		return
 	}
 
 	c.JSON(http.StatusOK, res)
-}
-
-func extractToken(c *gin.Context) string {
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" {
-		return ""
-	}
-
-	parts := strings.Split(authHeader, " ")
-	if len(parts) != 2 || parts[0] != "Bearer" {
-		return ""
-	}
-
-	return parts[1]
 }

@@ -5,8 +5,9 @@ import (
 	"log"
 	"time"
 
-	pb "local.domain/user_proto"
+	pb "github.com/Nicvod/SOA/userService/user_proto"
 
+	"github.com/Nicvod/SOA/utils/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -14,11 +15,11 @@ import (
 
 type UserService struct {
 	repo         UserRepository
-	authProvider AuthProvider
+	authProvider auth.AuthProvider
 	pb.UnimplementedUserServiceServer
 }
 
-func NewUserService(repo UserRepository, tokenManager AuthProvider) *UserService {
+func NewUserService(repo UserRepository, tokenManager auth.AuthProvider) *UserService {
 	return &UserService{repo: repo, authProvider: tokenManager}
 }
 
@@ -45,11 +46,19 @@ func (s *UserService) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
 
-	accessToken, err := s.authProvider.GenerateAccessToken(id)
+	accessToken, err := s.authProvider.GenerateToken(auth.TokenInfo{
+		UserID:    id,
+		UserLogin: req.Login,
+		TokenType: auth.AccessToken,
+	}, time.Hour)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate token: %v", err)
 	}
-	refreshToken, err := s.authProvider.GenerateRefreshToken(id)
+	refreshToken, err := s.authProvider.GenerateToken(auth.TokenInfo{
+		UserID:    id,
+		UserLogin: req.Login,
+		TokenType: auth.RefreshToken,
+	}, time.Hour*24*7)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate token: %v", err)
 	}
@@ -70,11 +79,19 @@ func (s *UserService) AuthenticateUser(ctx context.Context, req *pb.Authenticate
 		return nil, status.Errorf(codes.Unauthenticated, "invalid password")
 	}
 
-	accessToken, err := s.authProvider.GenerateAccessToken(user.ID)
+	accessToken, err := s.authProvider.GenerateToken(auth.TokenInfo{
+		UserID:    user.ID,
+		UserLogin: user.Login,
+		TokenType: auth.AccessToken,
+	}, time.Hour)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate token: %v", err)
 	}
-	refreshToken, err := s.authProvider.GenerateRefreshToken(user.ID)
+	refreshToken, err := s.authProvider.GenerateToken(auth.TokenInfo{
+		UserID:    user.ID,
+		UserLogin: user.Login,
+		TokenType: auth.RefreshToken,
+	}, time.Hour*24*7)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate token: %v", err)
 	}
@@ -86,11 +103,11 @@ func (s *UserService) AuthenticateUser(ctx context.Context, req *pb.Authenticate
 }
 
 func (s *UserService) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
-	tokenInfo, err := s.authProvider.GetTokenInfoFromContext(ctx)
+	tokenInfo, err := s.authProvider.TokenInfoFromContext(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.PermissionDenied, "failed to get token: %v", err)
 	}
-	if tokenInfo.TokenType != AccessToken {
+	if tokenInfo.TokenType != auth.AccessToken {
 		return nil, status.Errorf(codes.PermissionDenied, "bad token type")
 	}
 
@@ -112,11 +129,11 @@ func (s *UserService) GetProfile(ctx context.Context, req *pb.GetProfileRequest)
 }
 
 func (s *UserService) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
-	tokenInfo, err := s.authProvider.GetTokenInfoFromContext(ctx)
+	tokenInfo, err := s.authProvider.TokenInfoFromContext(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.PermissionDenied, "failed to get token: %v", err)
 	}
-	if tokenInfo.TokenType != AccessToken {
+	if tokenInfo.TokenType != auth.AccessToken {
 		return nil, status.Errorf(codes.PermissionDenied, "bad token type")
 	}
 
@@ -140,15 +157,19 @@ func (s *UserService) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRe
 }
 
 func (s *UserService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
-	tokenInfo, err := s.authProvider.GetTokenInfoFromToken(req.RefreshToken)
+	tokenInfo, err := s.authProvider.GetTokenInfo(req.RefreshToken)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "failed to get info from token: %v", err)
 	}
 	log.Println(tokenInfo)
-	if tokenInfo.TokenType != RefreshToken {
+	if tokenInfo.TokenType != auth.RefreshToken {
 		return nil, status.Error(codes.InvalidArgument, "bad token type")
 	}
-	newAccessToken, err := s.authProvider.GenerateAccessToken(tokenInfo.UserID)
+	newAccessToken, err := s.authProvider.GenerateToken(auth.TokenInfo{
+		UserID:    tokenInfo.UserID,
+		UserLogin: tokenInfo.UserLogin,
+		TokenType: auth.AccessToken,
+	}, time.Hour)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate new access token: %v", err)
 	}
